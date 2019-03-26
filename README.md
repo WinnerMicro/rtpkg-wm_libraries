@@ -11,8 +11,9 @@ wm_libraries
 ├───Demo                            // SDK原生的一些例子
 ├───Doc                             // 参考文档
 ├───Include                         // 头文件
-├───Lib                             // Wlan库
-├───oneshot                         // oneshot配网库
+├───Lib
+|   ├───oneshot                     // Winner Micro oneshot配网库
+|   └───Wlan                        // Wlan库
 ├───Platform
 |   ├───Boot                        // .S启动文件
 |   ├───Common                      // SDK公共文件

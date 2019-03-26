@@ -110,7 +110,7 @@ elif rtconfig.CROSS_TOOL == 'keil':
     LIB_PATH = [cwd + '/Lib/Wlan', cwd + '/Lib/oneshot']
 elif rtconfig.CROSS_TOOL == 'iar':
     LIB = ['libwlan_iar', 'libwmoneshot_iar']
-    LIB_PATH = [cwd + '/Lib/Wlan', cwd + /Lib/oneshot']
+    LIB_PATH = [cwd + '/Lib/Wlan', cwd + '/Lib/oneshot']
 
 CPPDEFINES = ['WM_W600']
 if rtconfig.CROSS_TOOL == 'iar':
