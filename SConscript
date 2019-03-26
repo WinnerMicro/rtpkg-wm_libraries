@@ -84,8 +84,7 @@ path = [cwd,
         cwd + '/Include/OS',
         cwd + '/Include/Platform',
         cwd + '/Include/OS',
-        cwd + '/Include/WiFi',
-        cwd + '/oneshot']
+        cwd + '/Include/WiFi']
 
 path += [cwd + '/Platform/Inc',
         cwd + '/Platform/Common/Params',
@@ -105,13 +104,13 @@ elif GetDepend(['RT_USING_RTT_CMSIS']):
 
 if rtconfig.CROSS_TOOL == 'gcc':
     LIB = ['wlan_gcc', 'wmoneshot_gcc']
-    LIB_PATH = [cwd + '/Lib/Wlan', cwd + '/oneshot']
+    LIB_PATH = [cwd + '/Lib/Wlan', cwd + '/Lib/oneshot']
 elif rtconfig.CROSS_TOOL == 'keil':
     LIB = ['libwlan_mdk', 'libwmoneshot_mdk']
-    LIB_PATH = [cwd + '/Lib/Wlan', cwd + '/oneshot']
+    LIB_PATH = [cwd + '/Lib/Wlan', cwd + '/Lib/oneshot']
 elif rtconfig.CROSS_TOOL == 'iar':
     LIB = ['libwlan_iar', 'libwmoneshot_iar']
-    LIB_PATH = [cwd + '/Lib/Wlan', cwd + '/oneshot']
+    LIB_PATH = [cwd + '/Lib/Wlan', cwd + /Lib/oneshot']
 
 CPPDEFINES = ['WM_W600']
 if rtconfig.CROSS_TOOL == 'iar':
