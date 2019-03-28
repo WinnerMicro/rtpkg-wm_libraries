@@ -12,13 +12,13 @@ wm_libraries
 ├───Doc                             // 参考文档
 ├───Include                         // 头文件
 ├───Lib
-|   ├───oneshot                     // Winner Micro oneshot配网库
-|   └───Wlan                        // Wlan库
+│   ├───oneshot                     // Winner Micro oneshot配网库
+│   └───Wlan                        // Wlan库
 ├───Platform
-|   ├───Boot                        // .S启动文件
-|   ├───Common                      // SDK公共文件
-|   ├───Drivers                     // 芯片驱动
-|   ├───Inc                         // 平台相关头文件
+│   ├───Boot                        // .S启动文件
+│   ├───Common                      // SDK公共文件
+│   ├───Drivers                     // 芯片驱动
+│   ├───Inc                         // 平台相关头文件
 │   └───Sys                         // 系统相关文件
 ├───rtthread                        // RT-Thread patch
 ├───Tools                           // img生成工具
@@ -28,7 +28,7 @@ wm_libraries
 
 ### 1.2 依赖
 
-- RT_Thread 3.0+
+- RT_Thread 4.0+
 
 ## 2、获取方式
 
@@ -45,7 +45,7 @@ RT-Thread online packages
 
 ## 3、注意事项
 
-- 使用 W601 芯片时,请注意芯片 Flash 的大小，区分 2M Flash 和 1M Flash。详细查看：
+- 使用 W600 芯片时,请注意芯片 Flash 的大小，区分 2M Flash 和 1M Flash。详细查看：
 
     [《WM_W60X_2M_Flash 布局说明》](/Doc/WM_W60X_2M_Flash布局说明_V1.0.pdf)
 
