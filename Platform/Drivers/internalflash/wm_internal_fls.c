@@ -16,6 +16,15 @@
 #include "wm_flash_map.h"
 #include "wm_internal_flash.h"
 #include "wm_flash.h"
+#include "wm_gpio.h"
+#include "wm_io.h"
+
+static void tls_spifls_di_switch(enum tls_io_name flashdi, int openflag);
+static void tls_spifls_do_switch(enum tls_io_name flashdo, int openflag);
+static void tls_spifls_ck_switch(enum tls_io_name flashck, int openflag);
+extern int tls_spifls_chip_erase(void);
+extern int tls_spifls_read_id(u32 * id);
+extern int tls_spifls_erase(u32 sector);
 
 static struct tls_inside_fls *inside_fls = NULL;
 static u32 inner1flashsize = 0; /*first inner flash size*/
@@ -562,7 +571,15 @@ int tls_fls_read(u32 addr, u8 * buf, u32 len)
 		{
 			lenfor2M  = len - lenfor1M;
 			lenfor2M = (addrfor2M + lenfor2M) <= (FLASH_BASE_ADDR | flashtotalsize) ? lenfor2M : ((FLASH_BASE_ADDR | flashtotalsize) - addrfor2M);
-		    return tls_spifls_read(addrfor2M&0xFFFFF, buf+lenfor1M, lenfor2M);
+			tls_spifls_ck_switch(WM_IO_PA_11, 1);
+			tls_spifls_di_switch(WM_IO_PA_03, 1);
+			tls_spifls_do_switch(WM_IO_PA_09, 1);
+		    err = tls_spifls_read(addrfor2M&0xFFFFF, buf+lenfor1M, lenfor2M);
+			tls_spifls_di_switch(WM_IO_PA_03, 0);	
+			tls_spifls_do_switch(WM_IO_PA_09, 0);
+			tls_spifls_ck_switch(WM_IO_PA_11, 0);
+
+			return err;
 		}
 	}
 
@@ -592,6 +609,7 @@ int tls_fls_write(u32 addr, u8 * buf, u32 len)
 	unsigned int secremain;					
  	unsigned int i;    
 	unsigned int offaddr; 
+	int err = 0;
 
 	u32 addrfor1M = 0;
 	u32 lenfor1M = 0;
@@ -674,7 +692,15 @@ int tls_fls_write(u32 addr, u8 * buf, u32 len)
 		{
 			lenfor2M  = len - lenfor1M;
 			lenfor2M = (addrfor2M + lenfor2M) <= (FLASH_BASE_ADDR | flashtotalsize)? lenfor2M : ((FLASH_BASE_ADDR | flashtotalsize) - addrfor2M);
-		    return tls_spifls_write((addrfor2M&0xFFFFF), buf + lenfor1M, lenfor2M);
+			tls_spifls_ck_switch(WM_IO_PA_11, 1);
+			tls_spifls_di_switch(WM_IO_PA_03, 1);
+			tls_spifls_do_switch(WM_IO_PA_09, 1);
+		    err =  tls_spifls_write((addrfor2M&0xFFFFF), buf + lenfor1M, lenfor2M);
+			tls_spifls_di_switch(WM_IO_PA_03, 0);	
+			tls_spifls_do_switch(WM_IO_PA_09, 0);
+			tls_spifls_ck_switch(WM_IO_PA_11, 0);
+
+			return err;
 		}
 	}
     return TLS_FLS_STATUS_OK;
@@ -693,6 +719,7 @@ int tls_fls_write(u32 addr, u8 * buf, u32 len)
 int tls_fls_erase(u32 sector)
 {
 	u32 addr;
+	int err = 0;
 	if (sector < (inner1flashsize/INSIDE_FLS_SECTOR_SIZE + INSIDE_FLS_BASE_ADDR/INSIDE_FLS_SECTOR_SIZE))
 	{
 	    if (inside_fls == NULL)
@@ -711,7 +738,14 @@ int tls_fls_erase(u32 sector)
 	}
 	else if (sector < (flashtotalsize/INSIDE_FLS_SECTOR_SIZE + INSIDE_FLS_BASE_ADDR/INSIDE_FLS_SECTOR_SIZE))
 	{
-	    return tls_spifls_erase(sector&0xFF);
+		tls_spifls_ck_switch(WM_IO_PA_11, 1);
+		tls_spifls_di_switch(WM_IO_PA_03, 1);
+		tls_spifls_do_switch(WM_IO_PA_09, 1);
+		err = tls_spifls_erase(sector&0xFF);
+		tls_spifls_di_switch(WM_IO_PA_03, 0);	
+		tls_spifls_do_switch(WM_IO_PA_09, 0);
+		tls_spifls_ck_switch(WM_IO_PA_11, 0);
+		return err;
 	}
 
     return TLS_FLS_STATUS_OK;
@@ -751,7 +785,13 @@ static void tls_fls_flush_sector(void)
     else if (gsSector < (flashtotalsize/INSIDE_FLS_SECTOR_SIZE + INSIDE_FLS_BASE_ADDR/INSIDE_FLS_SECTOR_SIZE))
     {
         addr = gsSector*INSIDE_FLS_SECTOR_SIZE;
+        tls_spifls_ck_switch(WM_IO_PA_11, 1);
+        tls_spifls_di_switch(WM_IO_PA_03, 1);
+        tls_spifls_do_switch(WM_IO_PA_09, 1);
         tls_spifls_write(addr&0xFFFFF, gsflscache, INSIDE_FLS_SECTOR_SIZE);
+        tls_spifls_di_switch(WM_IO_PA_03, 0);	
+        tls_spifls_do_switch(WM_IO_PA_09, 0);
+        tls_spifls_ck_switch(WM_IO_PA_11, 0);
     }
     //gsSecOffset = 0;
 
@@ -929,7 +969,13 @@ int tls_fls_chip_erase(void)
 
 	if (inner2flashsize)
 	{
+		tls_spifls_ck_switch(WM_IO_PA_11, 1);
+		tls_spifls_di_switch(WM_IO_PA_03, 1);
+		tls_spifls_do_switch(WM_IO_PA_09, 1);
 		tls_spifls_chip_erase();
+		tls_spifls_di_switch(WM_IO_PA_03, 0);	
+		tls_spifls_do_switch(WM_IO_PA_09, 0);
+		tls_spifls_ck_switch(WM_IO_PA_11, 0);
 	}
 
 	tls_mem_free(cache);
@@ -1039,11 +1085,17 @@ int tls_fls_init(void)
     inside_fls = fls;
 
 	inner1flashsize = getFlashDensity();
+    tls_spifls_ck_switch(WM_IO_PA_11, 1);
+    tls_spifls_di_switch(WM_IO_PA_03, 1);
+    tls_spifls_do_switch(WM_IO_PA_09, 1);	
 	if (TLS_FLS_STATUS_OK == tls_spifls_read_id(&id))
 	{
 		id = (id>>16)&0xFF;
 		inner2flashsize = (id ?(1<<id):0);
 	}
+    tls_spifls_di_switch(WM_IO_PA_03, 0);	
+    tls_spifls_do_switch(WM_IO_PA_09, 0);
+    tls_spifls_ck_switch(WM_IO_PA_11, 0);
 	flashtotalsize = inner1flashsize+inner2flashsize;
 	//rt_kprintf("i1=%x, i2=%x, %x\r\n", inner1flashsize, inner2flashsize, flashtotalsize);
 
@@ -1055,4 +1107,167 @@ int tls_fls_exit(void)
     TLS_DBGPRT_FLASH_INFO("Not support flash driver module uninstalled!\n");
     return TLS_FLS_STATUS_EPERM;
 }
+
+static void tls_spifls_di_switch(enum tls_io_name flashdi, int openflag)
+{
+    u32 optvalue = WM_IO_OPTION3;
+    int i= 0;
+    static u8  ioclose = 0;
+    u8 spidi[5][2] = {{WM_IO_PA_03, WM_IO_OPTION3}, 
+					  {WM_IO_PB_17, WM_IO_OPTION3}, 
+					  {WM_IO_PB_01, WM_IO_OPTION1},
+					  {WM_IO_PA_05, WM_IO_OPTION3},
+					  {WM_IO_PA_10, WM_IO_OPTION4}};
+
+    if (openflag == 1)
+    {
+        for (i = 0; i < sizeof(spidi)/(2*sizeof(u8)); i++)
+        {
+            optvalue = tls_io_cfg_get((enum tls_io_name)spidi[i][0]);
+            if (flashdi == (enum tls_io_name)spidi[i][0])
+            {
+                if (optvalue != spidi[i][1])
+                {
+                    ioclose &= ~(1<<i);
+                    tls_io_cfg_set(flashdi, spidi[i][1]);
+                }
+            }
+            else
+            {
+                if (optvalue == spidi[i][1])
+                {
+                    ioclose |= (1<<i);
+                    tls_io_cfg_set((enum tls_io_name)spidi[i][0], WM_IO_OPTION5);
+                }
+            }
+        }
+    }
+    else
+    {
+        for (i = 0; i < sizeof(spidi)/(2*sizeof(u8)); i++)
+        {
+            if (flashdi == (enum tls_io_name)spidi[i][0])
+            {
+                tls_io_cfg_set(flashdi, WM_IO_OPTION5);
+            }
+            else
+            {
+                if (ioclose&(1<<i))
+                {
+                    ioclose &= ~(1<<i);
+                    tls_io_cfg_set((enum tls_io_name)spidi[i][0], spidi[i][1]);
+                }
+            }
+        }
+    }
+}
+
+static void tls_spifls_do_switch(enum tls_io_name flashdo, int openflag)
+{
+    u32 optvalue = WM_IO_OPTION3;
+    int i= 0;
+    static u8  ioclose = 0;
+    u8 spido[5][2] = {{WM_IO_PB_18, WM_IO_OPTION3}, 
+					  {WM_IO_PB_02, WM_IO_OPTION1}, 
+					  {WM_IO_PA_04, WM_IO_OPTION3},
+					  {WM_IO_PA_09, WM_IO_OPTION4},
+					  {WM_IO_PA_10, WM_IO_OPTION4}};
+
+
+    if (openflag == 1)
+    {
+        for (i = 0; i < sizeof(spido)/(2*sizeof(u8)); i++)
+        {
+            optvalue = tls_io_cfg_get((enum tls_io_name)spido[i][0]);
+            if (flashdo == (enum tls_io_name)spido[i][0])
+            {
+                if (optvalue != spido[i][1])
+                {
+                    ioclose &= ~(1<<i);
+                    tls_io_cfg_set(flashdo, spido[i][1]);
+                }
+            }
+            else
+            {
+                if (optvalue == spido[i][1])
+                {
+                    ioclose |= (1<<i);
+                    tls_io_cfg_set((enum tls_io_name)spido[i][0], WM_IO_OPTION5);
+                }
+            }
+        }
+    }
+    else
+    {
+        for (i = 0; i < sizeof(spido)/(2*sizeof(u8)); i++)
+        {
+            if (flashdo == (enum tls_io_name)spido[i][0])
+            {
+                tls_io_cfg_set(flashdo, WM_IO_OPTION5);
+            }
+            else
+            {
+                if (ioclose&(1<<i))
+                {
+                    ioclose &= ~(1<<i);
+                    tls_io_cfg_set((enum tls_io_name)spido[i][0], spido[i][1]);
+                }
+            }
+        }
+    }
+}
+
+static void tls_spifls_ck_switch(enum tls_io_name flashck, int openflag)
+{
+    u32 optvalue = WM_IO_OPTION3;
+    int i= 0;
+    static u8  ioclose = 0;
+    u8 spick[4][2] = {{WM_IO_PA_01, WM_IO_OPTION3}, 
+					  {WM_IO_PB_16, WM_IO_OPTION3}, 
+					  {WM_IO_PB_27, WM_IO_OPTION1},
+					  {WM_IO_PA_11, WM_IO_OPTION4}};
+
+    if (openflag == 1)
+    {
+        for (i = 0; i < sizeof(spick)/(2*sizeof(u8)); i++)
+        {
+            optvalue = tls_io_cfg_get((enum tls_io_name)spick[i][0]);
+            if (flashck == (enum tls_io_name)spick[i][0])
+            {
+                if (optvalue != spick[i][1])
+                {
+                    ioclose &= ~(1<<i);
+                    tls_io_cfg_set(flashck, spick[i][1]);
+                }
+            }
+            else
+            {
+                if (optvalue == spick[i][1])
+                {
+                    ioclose |= (1<<i);
+                    tls_io_cfg_set((enum tls_io_name)spick[i][0], WM_IO_OPTION5);
+                }
+            }
+        }
+    }
+    else
+    {
+        for (i = 0; i < sizeof(spick)/(2*sizeof(u8)); i++)
+        {
+            if (flashck == (enum tls_io_name)spick[i][0])
+            {
+                tls_io_cfg_set(flashck, WM_IO_OPTION5);
+            }
+            else
+            {
+                if (ioclose&(1<<i))
+                {
+                    ioclose &= ~(1<<i);
+                    tls_io_cfg_set((enum tls_io_name)spick[i][0], spick[i][1]);
+                }
+            }
+        }
+    }
+}
+
 
