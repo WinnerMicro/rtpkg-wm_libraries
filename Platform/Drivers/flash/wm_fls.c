@@ -17,8 +17,12 @@
 #include "wm_dbg.h"
 #include "wm_mem.h"
 #include "wm_fls_gd25qxx.h"
+#include "wm_gpio.h"
+#include "wm_io.h"
 
-
+extern void tls_spifls_di_switch(enum tls_io_name flashdi, int openflag);
+extern void tls_spifls_do_switch(enum tls_io_name flashdo, int openflag);
+extern void tls_spifls_ck_switch(enum tls_io_name flashck, int openflag);
 static struct tls_fls *spi_fls = NULL;
 
 int tls_spifls_read_id(u32 * id)
@@ -28,9 +32,13 @@ int tls_spifls_read_id(u32 * id)
 
     cmd = FLS_CMD_READ_DEV_ID;
     *id = 0;
-
+    tls_spifls_ck_switch(WM_IO_PA_11, 1);
+    tls_spifls_di_switch(WM_IO_PA_03, 1);
+    tls_spifls_do_switch(WM_IO_PA_09, 1);	
     err = tls_spi_read_with_cmd((const u8 *) &cmd, 4, (u8 *) id, 3);
-
+    tls_spifls_di_switch(WM_IO_PA_03, 0);	
+    tls_spifls_do_switch(WM_IO_PA_09, 0);
+    tls_spifls_ck_switch(WM_IO_PA_11, 0);
     if (err != TLS_SPI_STATUS_OK)
     {
         TLS_DBGPRT_ERR("flash read ID fail(%d)!\n", err);
@@ -41,6 +49,7 @@ int tls_spifls_read_id(u32 * id)
 
     return TLS_FLS_STATUS_OK;
 }
+
 
 
 /**

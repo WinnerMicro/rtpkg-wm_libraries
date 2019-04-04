@@ -19,9 +19,9 @@
 #include "wm_gpio.h"
 #include "wm_io.h"
 
-static void tls_spifls_di_switch(enum tls_io_name flashdi, int openflag);
-static void tls_spifls_do_switch(enum tls_io_name flashdo, int openflag);
-static void tls_spifls_ck_switch(enum tls_io_name flashck, int openflag);
+void tls_spifls_di_switch(enum tls_io_name flashdi, int openflag);
+void tls_spifls_do_switch(enum tls_io_name flashdo, int openflag);
+void tls_spifls_ck_switch(enum tls_io_name flashck, int openflag);
 extern int tls_spifls_chip_erase(void);
 extern int tls_spifls_read_id(u32 * id);
 extern int tls_spifls_erase(u32 sector);
@@ -1085,17 +1085,13 @@ int tls_fls_init(void)
     inside_fls = fls;
 
 	inner1flashsize = getFlashDensity();
-    tls_spifls_ck_switch(WM_IO_PA_11, 1);
-    tls_spifls_di_switch(WM_IO_PA_03, 1);
-    tls_spifls_do_switch(WM_IO_PA_09, 1);	
+
 	if (TLS_FLS_STATUS_OK == tls_spifls_read_id(&id))
 	{
 		id = (id>>16)&0xFF;
 		inner2flashsize = (id ?(1<<id):0);
 	}
-    tls_spifls_di_switch(WM_IO_PA_03, 0);	
-    tls_spifls_do_switch(WM_IO_PA_09, 0);
-    tls_spifls_ck_switch(WM_IO_PA_11, 0);
+
 	flashtotalsize = inner1flashsize+inner2flashsize;
 	//rt_kprintf("i1=%x, i2=%x, %x\r\n", inner1flashsize, inner2flashsize, flashtotalsize);
 
@@ -1108,7 +1104,7 @@ int tls_fls_exit(void)
     return TLS_FLS_STATUS_EPERM;
 }
 
-static void tls_spifls_di_switch(enum tls_io_name flashdi, int openflag)
+void tls_spifls_di_switch(enum tls_io_name flashdi, int openflag)
 {
     u32 optvalue = WM_IO_OPTION3;
     int i= 0;
@@ -1162,7 +1158,7 @@ static void tls_spifls_di_switch(enum tls_io_name flashdi, int openflag)
     }
 }
 
-static void tls_spifls_do_switch(enum tls_io_name flashdo, int openflag)
+void tls_spifls_do_switch(enum tls_io_name flashdo, int openflag)
 {
     u32 optvalue = WM_IO_OPTION3;
     int i= 0;
@@ -1217,7 +1213,7 @@ static void tls_spifls_do_switch(enum tls_io_name flashdo, int openflag)
     }
 }
 
-static void tls_spifls_ck_switch(enum tls_io_name flashck, int openflag)
+void tls_spifls_ck_switch(enum tls_io_name flashck, int openflag)
 {
     u32 optvalue = WM_IO_OPTION3;
     int i= 0;
