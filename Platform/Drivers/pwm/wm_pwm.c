@@ -740,8 +740,7 @@ int tls_pwm_cap_init(u8 channel, u16 clkdiv, bool inverse_en, enum tls_pwm_cap_i
     tls_pwm_cnt_type_config(channel, WM_PWM_CNT_TYPE_EDGE_ALLGN_CAP);
 
     /* set output status */
-    if(channel == 0)
-        tls_pwm_output_en_cmd(channel, WM_PWM_OUT_EN_STATE_TRI);
+    tls_pwm_output_en_cmd(channel, WM_PWM_OUT_EN_STATE_TRI);
 
     /* set cycle mode (must be set int the capture mode) */
     tls_pwm_loop_mode_config(channel, WM_PWM_LOOP_TYPE_LOOP);
