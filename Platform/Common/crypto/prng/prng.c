@@ -34,10 +34,18 @@
 
 #include "../cryptoApi.h"
 
+#include "rtconfig.h"
+
 int32		psGetEntropy(unsigned char *bytes, uint32 size)
 {
+#ifdef BSP_USING_WIFI
 	extern int random_get_bytes(void *buf, size_t len);
 	random_get_bytes(bytes, size);
+#else
+	tls_crypto_random_init(tls_os_get_time(), CRYPTO_RNG_SWITCH_16);
+	tls_crypto_random_bytes(bytes, size);
+	tls_crypto_random_stop();
+#endif
 	return 0;
 }
 /*

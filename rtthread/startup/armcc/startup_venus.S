@@ -35,12 +35,12 @@ __heap_limit
                 EXPORT  __Vectors_Size
                 IMPORT PendSV_Handler 
                 IMPORT OS_CPU_SysTickHandler
-;                IMPORT UART0_IRQHandler
-;                IMPORT UART1_IRQHandler
-                IMPORT tls_wl_rx_isr
-                IMPORT tls_wl_mgmt_tx_isr
-                IMPORT tls_wl_data_tx_isr
-                IMPORT tls_wl_mac_isr
+;               IMPORT UART0_IRQHandler
+;               IMPORT UART1_IRQHandler
+;               IMPORT tls_wl_rx_isr
+;               IMPORT tls_wl_mgmt_tx_isr
+;               IMPORT tls_wl_data_tx_isr
+;               IMPORT tls_wl_mac_isr
                 IMPORT TIM0_IRQHandler
                 IMPORT TIM1_IRQHandler  
                 IMPORT TIM2_IRQHandler
@@ -167,7 +167,26 @@ DebugMon_Handler\
 ;                EXPORT  SysTick_Handler            [WEAK]
 ;                B       .
 ;                ENDP
-
+tls_wl_mac_isr\
+                PROC
+                EXPORT  tls_wl_mac_isr            [WEAK]
+                B       .
+                ENDP
+tls_wl_rx_isr\
+                PROC
+                EXPORT  tls_wl_rx_isr            [WEAK]
+                B       .
+                ENDP
+tls_wl_mgmt_tx_isr\
+                PROC
+                EXPORT  tls_wl_mgmt_tx_isr            [WEAK]
+                B       .
+                ENDP
+tls_wl_data_tx_isr\
+                PROC
+                EXPORT  tls_wl_data_tx_isr            [WEAK]
+                B       .
+                ENDP
 Default_Handler PROC
 
                 EXPORT  SDIO_RX_IRQHandler          [WEAK]

@@ -261,6 +261,25 @@ int tls_crypto_rc4(psCipherContext_t * ctx, unsigned char *in, unsigned char *ou
 	return ERR_CRY_OK;
 }
 
+int tls_crypto_rc4_adv(unsigned char *key, u32 keylen, const unsigned char *in, unsigned char *out, u32 len)
+{
+	unsigned int sec_cfg, val;
+
+	tls_crypto_clear_32reg(HR_CRYPTO_KEY0, 16);
+	tls_crypto_write_32reg(HR_CRYPTO_KEY0, key, keylen);
+	tls_reg_write32(HR_CRYPTO_SRC_ADDR, (unsigned int)in);
+	tls_reg_write32(HR_CRYPTO_DEST_ADDR, (unsigned int)out);
+	val = tls_reg_read32(HR_CRYPTO_SEC_CFG);
+	sec_cfg = (val & 0xF0000000) | (CRYPTO_METHOD_RC4 << 16) | (1 << SOFT_RESET_RC4) | (len & 0xFFFF);
+	tls_reg_write32(HR_CRYPTO_SEC_CFG, sec_cfg);
+	tls_reg_write32(HR_CRYPTO_SEC_CTRL, 0x1);//start crypto
+	while (!crypto_complete)
+	{
+
+	}
+	crypto_complete = 0;
+	return ERR_CRY_OK;
+}
 
 /**
  * @brief          	This function initializes a AES encryption algorithm,  i.e. fills the psCipherContext_t structure pointed to by ctx with necessary data.
@@ -345,6 +364,51 @@ int tls_crypto_aes_encrypt_decrypt(psCipherContext_t * ctx, unsigned char *in, u
 	return ERR_CRY_OK;
 }
 
+int tls_crypto_aes_encrypt_decrypt_adv(unsigned char *key, unsigned char *IV, 
+	const unsigned char *in, unsigned char *out, u32 len, CRYPTO_MODE cbc, CRYPTO_WAY dec)
+{
+	unsigned int sec_cfg, val;
+	u32 keylen = 16;
+	unsigned char temp[16];
+
+	if (cbc == CRYPTO_MODE_CBC && dec == CRYPTO_WAY_DECRYPT)
+	{
+		memcpy(temp, &in[len - 16], 16);
+	}
+
+	tls_crypto_clear_32reg(HR_CRYPTO_KEY0, 16);
+	tls_crypto_write_32reg(HR_CRYPTO_KEY0, key, keylen);
+    tls_crypto_clear_32reg(HR_CRYPTO_IV0, 8);
+    tls_crypto_clear_32reg(HR_CRYPTO_IV1, 8);
+    tls_crypto_write_32reg(HR_CRYPTO_IV0, IV, 8);
+    tls_crypto_write_32reg(HR_CRYPTO_IV1, IV+8, 8);
+
+	tls_reg_write32(HR_CRYPTO_SRC_ADDR, (unsigned int)in);
+	tls_reg_write32(HR_CRYPTO_DEST_ADDR, (unsigned int)out);
+	val = tls_reg_read32(HR_CRYPTO_SEC_CFG);
+	sec_cfg = (val & 0xF0000000) | (CRYPTO_METHOD_AES << 16) | (1 << SOFT_RESET_AES) |(dec << 20) | (cbc << 21) | (len & 0xFFFF); 
+	tls_reg_write32(HR_CRYPTO_SEC_CFG, sec_cfg);
+	tls_reg_write32(HR_CRYPTO_SEC_CTRL, 0x1);//start crypto
+	while (!crypto_complete)
+	{
+
+	}
+	if (cbc == CRYPTO_MODE_CBC)
+	{
+		if (dec == CRYPTO_WAY_DECRYPT)
+		{
+			memcpy(IV, temp, 16);
+		}
+		else if (dec == CRYPTO_WAY_ENCRYPT)
+		{
+			memcpy(IV, &out[len - 16], 16);
+		}
+	}
+	crypto_complete = 0;
+	return ERR_CRY_OK;
+}
+
+
 /**
  * @brief			This function initializes a 3DES encryption algorithm,  i.e. fills the psCipherContext_t structure pointed to by ctx with necessary data. 
  *
@@ -417,7 +481,46 @@ int tls_crypto_3des_encrypt_decrypt(psCipherContext_t * ctx, unsigned char *in, 
 	crypto_complete = 0;
 	return ERR_CRY_OK;
 }
-  
+
+int tls_crypto_3des_encrypt_decrypt_adv(unsigned char *key, unsigned char *IV, 
+	const unsigned char *in, unsigned char *out, u32 len, CRYPTO_MODE cbc, CRYPTO_WAY dec)
+{
+	unsigned int sec_cfg, val;
+	u32 keylen = DES3_KEY_LEN;
+	unsigned char temp[8];
+
+	if (cbc == CRYPTO_MODE_CBC && dec == CRYPTO_WAY_DECRYPT)
+	{
+		memcpy(temp, &in[len - 8], 8);
+	}
+	tls_crypto_clear_32reg(HR_CRYPTO_KEY0, DES3_KEY_LEN);
+	tls_crypto_write_32reg(HR_CRYPTO_KEY0, key, keylen);
+	tls_crypto_clear_32reg(HR_CRYPTO_IV0, DES3_IV_LEN);
+	tls_crypto_write_32reg(HR_CRYPTO_IV0, IV, DES3_IV_LEN);
+	tls_reg_write32(HR_CRYPTO_SRC_ADDR, (unsigned int)in);
+	tls_reg_write32(HR_CRYPTO_DEST_ADDR, (unsigned int)out);
+	val = tls_reg_read32(HR_CRYPTO_SEC_CFG);
+	sec_cfg = (val & 0xF0000000) |(CRYPTO_METHOD_3DES << 16) | (1 << SOFT_RESET_DES) | (dec << 20) | (cbc << 21) | (len & 0xFFFF); 
+	tls_reg_write32(HR_CRYPTO_SEC_CFG, sec_cfg);
+	tls_reg_write32(HR_CRYPTO_SEC_CTRL, 0x1);//start crypto
+	while (!crypto_complete)
+	{
+
+	}
+	if (cbc == CRYPTO_MODE_CBC)
+	{
+		if (dec == CRYPTO_WAY_DECRYPT)
+		{
+			memcpy(IV, temp, 8);
+		}
+		else if (dec == CRYPTO_WAY_ENCRYPT)
+		{
+			memcpy(IV, &out[len - 8], 8);
+		}
+	}
+	crypto_complete = 0;
+	return ERR_CRY_OK;
+}
 
 /**
  * @brief			This function initializes a DES encryption algorithm,  i.e. fills the psCipherContext_t structure pointed to by ctx with necessary data. 
@@ -491,7 +594,46 @@ int tls_crypto_des_encrypt_decrypt(psCipherContext_t * ctx, unsigned char *in, u
 	return ERR_CRY_OK;
 }
 
- 
+int tls_crypto_des_encrypt_decrypt_adv(unsigned char *key, unsigned char *IV, 
+	const unsigned char *in, unsigned char *out, u32 len, CRYPTO_MODE cbc, CRYPTO_WAY dec)
+{
+	unsigned int sec_cfg, val;
+	u32 keylen = DES_KEY_LEN;
+	unsigned char temp[8];
+
+	if (cbc == CRYPTO_MODE_CBC && dec == CRYPTO_WAY_DECRYPT)
+	{
+		memcpy(temp, &in[len - 8], 8);
+	}
+	tls_crypto_clear_32reg(HR_CRYPTO_KEY0, DES_KEY_LEN);
+	tls_crypto_write_32reg(HR_CRYPTO_KEY0, key, keylen);
+	tls_crypto_clear_32reg(HR_CRYPTO_IV0, DES3_IV_LEN);
+	tls_crypto_write_32reg(HR_CRYPTO_IV0, IV, DES3_IV_LEN);
+	tls_reg_write32(HR_CRYPTO_SRC_ADDR, (unsigned int)in);
+	tls_reg_write32(HR_CRYPTO_DEST_ADDR, (unsigned int)out);
+	val = tls_reg_read32(HR_CRYPTO_SEC_CFG);
+	sec_cfg = (val & 0xF0000000) | (CRYPTO_METHOD_DES << 16) | (1 << SOFT_RESET_DES) | (dec << 20) | (cbc << 21) | (len & 0xFFFF); 
+	tls_reg_write32(HR_CRYPTO_SEC_CFG, sec_cfg);
+	tls_reg_write32(HR_CRYPTO_SEC_CTRL, 0x1);//start crypto
+	while (!crypto_complete)
+	{
+
+	}
+	if (cbc == CRYPTO_MODE_CBC)
+	{
+		if (dec == CRYPTO_WAY_DECRYPT)
+		{
+			memcpy(IV, temp, 8);
+		}
+		else if (dec == CRYPTO_WAY_ENCRYPT)
+		{
+			memcpy(IV, &out[len - 8], 8);
+		}
+	}
+	crypto_complete = 0;
+	return ERR_CRY_OK;
+}
+
 /**
  * @brief			This function initializes a CRC algorithm,  i.e. fills the psCrcContext_t structure pointed to by ctx with necessary data. 
  *
@@ -589,6 +731,50 @@ int tls_crypto_crc_final(psCrcContext_t * ctx, u32 *crc_val)
 {
 	*crc_val = ctx->state; 
 	return ERR_CRY_OK;
+}
+
+u32 tls_crypto_crc_update_adv(u32 crc_val, CRYPTO_CRC_TYPE type, u8 mode, const unsigned char *in, u32 len)
+{
+	unsigned int sec_cfg, val;
+	val = tls_reg_read32(HR_CRYPTO_SEC_CFG);
+	sec_cfg =  (val & 0xF0000000) | (CRYPTO_METHOD_CRC << 16) | (type << 21) | (mode << 23) | (len & 0xFFFF); 
+	tls_reg_write32(HR_CRYPTO_SEC_CFG, sec_cfg);
+	if(mode & OUTPUT_REFLECT)
+	{
+		u8 ch_crc = 16;
+		u32 state = 0;
+		switch(type)
+		{
+			case CRYPTO_CRC_TYPE_8:
+				ch_crc = 8;
+				break;
+			case CRYPTO_CRC_TYPE_16_MODBUS:
+				ch_crc = 16;
+				break;
+			case CRYPTO_CRC_TYPE_16_CCITT:
+				ch_crc = 16;
+				break;
+			case CRYPTO_CRC_TYPE_32:
+				ch_crc = 32;
+				break;
+			default:
+				break;
+		}
+		state = Reflect(crc_val, ch_crc);
+		tls_reg_write32(HR_CRYPTO_CRC_KEY, state);
+	}
+	else
+		tls_reg_write32(HR_CRYPTO_CRC_KEY, crc_val);
+
+	tls_reg_write32(HR_CRYPTO_SRC_ADDR, (unsigned int)in);
+	tls_reg_write32(HR_CRYPTO_SEC_CTRL, 0x1);//start crypto
+	while (!crypto_complete)
+	{
+
+	}
+	crypto_complete = 0;
+	crc_val = tls_reg_read32(HR_CRYPTO_CRC_RESULT); 
+	return crc_val;
 }
 
 static void hd_sha1_compress(psDigestContext_t *md)
@@ -1134,10 +1320,14 @@ int tls_crypto_exptmod(pstm_int *a, pstm_int *e, pstm_int *n, pstm_int *res)
 	pstm_init(NULL, &R);
 	k = pstm_count_bits(n);//n->used * DIGIT_BIT;//pstm_count_bits(n);
 	k = ((k / 32) + (k % 32 > 0 ? 1 : 0)) * 32;
+#if 0
 	pstm_set(&Y, k);
 	pstm_set(&X, 2);
 	pstm_exptmod(NULL, &X, &Y, n, &R); //R = 2^k % n
-	//pstm_set(&Y, 1);
+#else
+	pstm_2expt(&X, (int16)k); // X = 2 ^ K
+	pstm_mod(NULL, &X, n, &R); //R = 2 ^ K % n
+#endif
 	pstm_mulmod(NULL, a, &R, n, &X); //X = A * R
 	pstm_copy(&R, &Y);
 	if(n->used > 1)

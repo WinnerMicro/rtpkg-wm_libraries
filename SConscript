@@ -37,15 +37,15 @@ src += Split("""
 
 src += Split("""
     Platform/Common/crypto/wm_crypto_hard.c
-    Platform/Common/crypto/digest/hmac.c
-    Platform/Common/crypto/digest/md2.c
-    Platform/Common/crypto/digest/md4.c
+    Platform/Common/crypto/digest/wm_crypto_hmac.c
+    Platform/Common/crypto/digest/wm_crypto_md2.c
+    Platform/Common/crypto/digest/wm_crypto_md4.c
     Platform/Common/crypto/digest/sha224.c
     Platform/Common/crypto/digest/sha384.c
-    Platform/Common/crypto/digest/sha512.c
+    Platform/Common/crypto/digest/wm_crypto_sha512.c
     Platform/Common/crypto/keyformat/asn1.c
-    Platform/Common/crypto/keyformat/base64.c
-    Platform/Common/crypto/keyformat/x509.c
+    Platform/Common/crypto/keyformat/wm_crypto_base64.c
+    Platform/Common/crypto/keyformat/wm_crypto_x509.c
     Platform/Common/crypto/math/pstm_mul_comba.c
     Platform/Common/crypto/prng/prng.c
     Platform/Common/crypto/prng/yarrow.c
@@ -53,7 +53,7 @@ src += Split("""
     Platform/Common/crypto/pubkey/ecc.c
     Platform/Common/crypto/pubkey/pkcs.c
     Platform/Common/crypto/pubkey/pubkey.c
-    Platform/Common/crypto/pubkey/rsa.c
+    Platform/Common/crypto/pubkey/wm_crypto_rsa.c
     Platform/Common/crypto/symmetric/aesGCM.c
     Platform/Common/crypto/symmetric/des3.c
     Platform/Common/crypto/symmetric/idea.c
@@ -102,15 +102,22 @@ elif GetDepend(['RT_USING_RTT_CMSIS']):
     path += [RTT_ROOT + '/components/CMSIS/Include']
 '''
 
+LIB_PATH = [cwd + '/Lib/Wlan']
 if rtconfig.CROSS_TOOL == 'gcc':
-    LIB = ['wlan_gcc', 'wmoneshot_gcc']
-    LIB_PATH = [cwd + '/Lib/Wlan', cwd + '/Lib/oneshot']
+    LIB = ['wlan_gcc']
 elif rtconfig.CROSS_TOOL == 'keil':
-    LIB = ['libwlan_mdk', 'libwmoneshot_mdk']
-    LIB_PATH = [cwd + '/Lib/Wlan', cwd + '/Lib/oneshot']
+    LIB = ['libwlan_mdk']
 elif rtconfig.CROSS_TOOL == 'iar':
-    LIB = ['libwlan_iar', 'libwmoneshot_iar']
-    LIB_PATH = [cwd + '/Lib/Wlan', cwd + '/Lib/oneshot']
+    LIB = ['libwlan_iar']
+
+if GetDepend(['WM_USING_ONESHOT']):
+    LIB_PATH += [cwd + '/Lib/oneshot']
+    if rtconfig.CROSS_TOOL == 'gcc':
+        LIB += ['wmoneshot_gcc']
+    elif rtconfig.CROSS_TOOL == 'keil':
+        LIB += ['libwmoneshot_mdk']
+    elif rtconfig.CROSS_TOOL == 'iar':
+        LIB += ['libwmoneshot_iar']
 
 CPPDEFINES = ['WM_W600']
 if rtconfig.CROSS_TOOL == 'iar':
