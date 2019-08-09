@@ -161,6 +161,15 @@ Reset_Handler:
     strlt   r0, [r1], #4
     blt .L_loop3
 
+    ldr r1, =__bss2_start__
+    ldr r2, =__bss2_end__
+
+.L_loop4:
+    cmp r1, r2
+    itt lt
+    strlt   r0, [r1], #4
+    blt .L_loop4
+
     bl  entry
 
     .pool

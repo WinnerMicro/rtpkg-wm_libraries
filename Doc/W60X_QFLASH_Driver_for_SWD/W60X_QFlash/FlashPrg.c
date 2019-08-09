@@ -266,8 +266,18 @@ int UpdateImgHeader(void)
 }
 
 unsigned long Verify (unsigned long adr, unsigned long sz, unsigned char *buf) {
+	T_BOOTER booter;
+	unsigned char *baseaddr = (unsigned char *)0x8010000;
+	
 
 	UpdateImgHeader();
-
+	memcpy(&booter, baseaddr, sizeof(T_BOOTER));
+	if ((booter.run_img_addr +booter.run_img_len) <= (adr+sz))
+	{
+		*(volatile unsigned int *)0x40011040 = 0x1ACCE551;
+		*(volatile unsigned int *)0x40011000 = 40*200000UL;
+		*(volatile unsigned int *)0x40011008 = 0x3;
+		*(volatile unsigned int *)0x40011040 = 1;
+	}
 	return adr + sz;
 }

@@ -106,6 +106,7 @@ tls_os_status_t tls_os_task_create(tls_os_task_t *task,
     {
         LOG_E("\nCurrent Stack [0x%8x, 0x%8x) is NOT in VALID STACK range [0x20000000,0x20028000)", stk_start, stk_start + stk_size);
         LOG_E("Please refer to APIs' manul and modify task stack position!!!");
+        RT_ASSERT(0);
         return TLS_OS_ERROR;
     }
 
