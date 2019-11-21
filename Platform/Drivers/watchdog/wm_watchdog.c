@@ -149,6 +149,7 @@ u32 tls_watchdog_get_timeleft(void)
  */
 void tls_sys_reset(void)
 {
+    tls_os_set_critical();
     tls_reg_write32(HR_WDG_LOCK, 0x1ACCE551);
     tls_reg_write32(HR_WDG_LOAD_VALUE, 0x100);
     tls_reg_write32(HR_WDG_CTRL, 0x3);
